@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
+const crypto = require('crypto');
 const app = express();
 
 app.use(cors());
@@ -22,15 +23,18 @@ const getHeaders = () => ({
     'Cookie': 'L=hindi; gdpr_acceptance=true; pro=false'
 });
 
-// Decode encrypted media URL
+// Decode encrypted media URL (DES-ECB Decryption)
 const decodeMediaUrl = (url) => {
     if (!url) return '';
     try {
-        // JioSaavn uses base64 encoded URLs
-        const decoded = Buffer.from(url, 'base64').toString('utf-8');
-        return decoded.replace(/^http:/, 'https:');
-    } catch {
-        return url;
+        const key = '38346b38';
+        const decipher = crypto.createDecipheriv('des-ecb', key, '');
+        let decoded = decipher.update(url, 'base64', 'utf8');
+        decoded += decipher.final('utf8');
+        return decoded.replace('http:', 'https:');
+    } catch (error) {
+        console.error('Decryption error:', error.message);
+        return '';
     }
 };
 
