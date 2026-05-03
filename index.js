@@ -24,8 +24,8 @@ app.get('/api/search', async (req, res) => {
     }
     
     try {
-        // Using the JioSaavn API instance provided in the request
-        const response = await axios.get(`https://saavn.me/search/songs?query=${encodeURIComponent(query)}`);
+        // Using a more stable JioSaavn API instance
+        const response = await axios.get(`https://jiosaavn-api.vercel.app/api/search?query=${encodeURIComponent(query)}`);
         res.json(response.data);
     } catch (error) {
         console.error("Search Error:", error.message);
@@ -41,7 +41,7 @@ app.get('/api/song', async (req, res) => {
     }
 
     try {
-        const response = await axios.get(`https://saavn.me/songs?id=${id}`);
+        const response = await axios.get(`https://jiosaavn-api.vercel.app/api/song?id=${id}`);
         res.json(response.data);
     } catch (error) {
         console.error("Song Details Error:", error.message);
