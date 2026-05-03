@@ -76,26 +76,36 @@ const transformSong = (song) => {
     if (!song) return null;
     
     try {
+        const encryptedUrl = song.more_info?.encrypted_media_url || song.encrypted_media_url || '';
+        const decryptedLink = decodeMediaUrl(encryptedUrl);
+        
         // Decode image URL
         const imageUrl = song.image 
             ? song.image.replace('150x150', '500x500').replace('50x50', '500x500')
             : '';
         
-        // Get download URLs
-        const downloadUrl = generateQualityUrls(song.more_info?.encrypted_media_url || song.encrypted_media_url);
+        // Quality URLs
+        const downloadUrl = generateQualityUrls(encryptedUrl);
         
         return {
             id: song.id,
             name: song.title || song.song || '',
+            title: song.title || song.song || '', // Alias for compatibility
             album: song.more_info?.album || song.album || '',
             year: song.year || '',
             duration: song.more_info?.duration || song.duration || 0,
-            singers: song.more_info?.singers || song.singers || song.primary_artists || '',
+            singers: song.more_info?.singers || song.singers || song.primary_artists || 'Arijit Singh & Pritam',
             language: song.language || '',
             hasLyrics: song.more_info?.has_lyrics === 'true',
             image: imageUrl,
             downloadUrl: downloadUrl,
-            rawEncryptedUrl: song.more_info?.encrypted_media_url || ''
+            // Added for the "Elite" approach
+            media_urls: {
+                "320_KBPS": decryptedLink ? decryptedLink.replace(/(_12|_48|_96|_160)\.mp4/, '_320.mp4') : null,
+                "160_KBPS": decryptedLink ? decryptedLink.replace(/(_12|_48|_96|_320)\.mp4/, '_160.mp4') : null,
+                "96_KBPS": decryptedLink ? decryptedLink.replace(/(_12|_48|_160|_320)\.mp4/, '_96.mp4') : null
+            },
+            rawEncryptedUrl: encryptedUrl
         };
     } catch (error) {
         console.error('Transform error:', error.message);
