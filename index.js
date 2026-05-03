@@ -8,7 +8,7 @@ app.use(cors());
 app.use(express.json());
 
 // Elite Decryption Key
-const SECRET_KEY = '38346b38';
+const SECRET_KEY = '38346591';
 const JIOSAAVN_BASE = 'https://www.jiosaavn.com/api.php';
 
 const USER_AGENTS = [
