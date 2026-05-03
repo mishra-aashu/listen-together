@@ -29,13 +29,19 @@ const getHeaders = () => ({
 const decrypt = (data) => {
     if (!data) return null;
     try {
-        // NOTE: If this fails with "unsupported", you must set NODE_OPTIONS=--openssl-legacy-provider
-        const decipher = crypto.createDecipheriv('des-ecb', SECRET_KEY, '');
+        // DES-ECB decryption
+        // NOTE: If this fails with "unsupported", ensure NODE_OPTIONS=--openssl-legacy-provider is set
+        const keyBuffer = Buffer.from(SECRET_KEY, 'utf8');
+        const decipher = crypto.createDecipheriv('des-ecb', keyBuffer, Buffer.alloc(0));
         let decrypted = decipher.update(data, 'base64', 'utf8');
         decrypted += decipher.final('utf8');
-        return decrypted.trim();
+        return decrypted ? decrypted.trim() : null;
     } catch (e) {
-        console.error('Decryption failed:', e.message);
+        if (e.message.includes('unsupported')) {
+            console.error('CRITICAL: DES-ECB is unsupported. Please run with NODE_OPTIONS=--openssl-legacy-provider');
+        } else {
+            console.error('Decryption failed:', e.message);
+        }
         return null;
     }
 };
@@ -65,9 +71,9 @@ const transformSong = (song) => {
         singers: song.more_info?.singers || song.singers || song.primary_artists || song.primaryArtists || 'Arijit Singh & Pritam',
         image: imageUrl,
         media_urls: {
-            "320_KBPS": directUrl ? directUrl.replace(/(_12|_48|_96|_160)\.mp4/, '_320.mp4') : null,
-            "160_KBPS": directUrl ? directUrl.replace(/(_12|_48|_96|_320)\.mp4/, '_160.mp4') : null,
-            "96_KBPS": directUrl ? directUrl.replace(/(_12|_48|_160|_320)\.mp4/, '_96.mp4') : null
+            "320_KBPS": directUrl ? directUrl.replace(/(_[0-9]{2,3})\.(mp4|m4a|mp3)/, '_320.$2') : null,
+            "160_KBPS": directUrl ? directUrl.replace(/(_[0-9]{2,3})\.(mp4|m4a|mp3)/, '_160.$2') : null,
+            "96_KBPS": directUrl ? directUrl.replace(/(_[0-9]{2,3})\.(mp4|m4a|mp3)/, '_96.$2') : null
         },
         rawEncryptedUrl: encryptedUrl
     };
