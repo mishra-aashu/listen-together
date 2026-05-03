@@ -153,7 +153,7 @@ app.get('/api/search', async (req, res) => {
                 _marker: '0',
                 api_version: '4',
                 ctx: 'web6dot0',
-                query: query.trim(),
+                q: query.trim(),
                 p: page,
                 n: limit
             },
@@ -169,8 +169,7 @@ app.get('/api/search', async (req, res) => {
             return res.status(404).json({
                 status: 'failed',
                 error: 'No results found',
-                rawKeys: Object.keys(data || {}),
-                rawData: data // Added for debugging
+                rawKeys: Object.keys(data || {})
             });
         }
 
