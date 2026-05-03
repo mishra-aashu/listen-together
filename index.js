@@ -169,7 +169,8 @@ app.get('/api/search', async (req, res) => {
             return res.status(404).json({
                 status: 'failed',
                 error: 'No results found',
-                rawKeys: Object.keys(data || {})
+                rawKeys: Object.keys(data || {}),
+                rawData: data // Added for debugging
             });
         }
 
