@@ -1,7 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
-const crypto = require('crypto');
+const CryptoJS = require('crypto-js');
 const app = express();
 
 app.use(cors());
@@ -29,19 +29,16 @@ const getHeaders = () => ({
 const decrypt = (data) => {
     if (!data) return null;
     try {
-        // DES-ECB decryption
-        // NOTE: If this fails with "unsupported", ensure NODE_OPTIONS=--openssl-legacy-provider is set
-        const keyBuffer = Buffer.from(SECRET_KEY, 'utf8');
-        const decipher = crypto.createDecipheriv('des-ecb', keyBuffer, Buffer.alloc(0));
-        let decrypted = decipher.update(data, 'base64', 'utf8');
-        decrypted += decipher.final('utf8');
-        return decrypted ? decrypted.trim() : null;
+        const key = CryptoJS.enc.Utf8.parse(SECRET_KEY);
+        const decrypted = CryptoJS.DES.decrypt(
+            { ciphertext: CryptoJS.enc.Base64.parse(data) },
+            key,
+            { mode: CryptoJS.mode.ECB, padding: CryptoJS.pad.Pkcs7 }
+        );
+        const result = decrypted.toString(CryptoJS.enc.Utf8);
+        return result ? result.trim() : null;
     } catch (e) {
-        if (e.message.includes('unsupported')) {
-            console.error('CRITICAL: DES-ECB is unsupported. Please run with NODE_OPTIONS=--openssl-legacy-provider');
-        } else {
-            console.error('Decryption failed:', e.message);
-        }
+        console.error('Decryption failed:', e.message);
         return null;
     }
 };

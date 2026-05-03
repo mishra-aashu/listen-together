@@ -11,8 +11,5 @@
       "src": "/(.*)",
       "dest": "index.js"
     }
-  ],
-  "env": {
-    "NODE_OPTIONS": "--openssl-legacy-provider"
-  }
+  ]
 }
