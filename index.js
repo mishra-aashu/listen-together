@@ -39,25 +39,31 @@ const decodeMediaUrl = (url) => {
         const decipher = crypto.createDecipheriv('des-ecb', key, '');
         let decoded = decipher.update(url, 'base64', 'utf8');
         decoded += decipher.final('utf8');
-        return decoded.replace('http:', 'https:');
+        return decoded.trim().replace('http:', 'https:');
     } catch (error) {
-        console.error('Decryption error:', error.message);
+        console.error('Decryption failed:', error.message);
         return '';
     }
 };
 
 // Generate all quality URLs from base URL
 const generateQualityUrls = (baseUrl) => {
-    if (!baseUrl) return [];
-    
     const decoded = decodeMediaUrl(baseUrl);
+    if (!decoded) return [];
+    
     const urls = [];
-    const qualities = ['12', '48', '96', '160', '320'];
+    const qualities = [
+        { id: '_12', bitrate: '12kbps' },
+        { id: '_48', bitrate: '48kbps' },
+        { id: '_96', bitrate: '96kbps' },
+        { id: '_160', bitrate: '160kbps' },
+        { id: '_320', bitrate: '320kbps' }
+    ];
     
     qualities.forEach(q => {
-        const link = decoded.replace(/(_12|_48|_96|_160|_320)\.mp4/, `_${q}.mp4`);
+        const link = decoded.replace(/(_12|_48|_96|_160|_320)\.mp4/, `${q.id}.mp4`);
         urls.push({
-            quality: `${q}kbps`,
+            quality: q.bitrate,
             link: link
         });
     });
