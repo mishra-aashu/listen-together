@@ -55,13 +55,44 @@ const getImageUrl = (img) => {
   return '';
 };
 
+// Robustly extract artist names from raw JioSaavn data
+const extractArtist = (song) => {
+  if (!song) return '';
+  const artistData = 
+    song.more_info?.singers || 
+    song.more_info?.primary_artists || 
+    song.more_info?.artist || 
+    song.more_info?.music || 
+    song.singers || 
+    song.primary_artists || 
+    song.primaryArtists || 
+    song.artist || 
+    song.music || 
+    '';
+  
+  let artistName = '';
+  if (Array.isArray(artistData)) {
+    artistName = artistData.map(a => typeof a === 'string' ? a : (a.name || a)).join(', ');
+  } else if (typeof artistData === 'string') {
+    artistName = artistData;
+  }
+  
+  // Fallback to album artists if still empty
+  if (!artistName && song.more_info?.album?.artists && Array.isArray(song.more_info.album.artists)) {
+    artistName = song.more_info.album.artists.map(a => a.name || a).join(', ');
+  }
+  
+  return artistName || 'Unknown Artist';
+};
+
 // Transform a raw JioSaavn song object into our standard format
 const transformSong = (song) => {
   if (!song) return null;
+  
   const encryptedUrl = song.more_info?.encrypted_media_url || song.encrypted_media_url || '';
   const directUrl = decrypt(encryptedUrl);
-
   const imageUrl = getImageUrl(song.image);
+  const artistName = extractArtist(song);
 
   return {
     id: song.id,
@@ -70,7 +101,7 @@ const transformSong = (song) => {
     album: song.more_info?.album || song.album?.name || song.album || 'Single',
     year: song.year || '',
     duration: song.more_info?.duration || song.duration || 0,
-    singers: song.more_info?.singers || song.singers || song.primary_artists || song.primaryArtists || '',
+    singers: artistName,
     image: imageUrl,
     media_urls: {
       '320_KBPS': directUrl ? directUrl.replace(/(_\d{2,3})\.(mp4|m4a|mp3)/, '_320.$2') : null,
@@ -233,7 +264,7 @@ app.get('/api/recommendations', async (req, res) => {
       throw new Error('No details');
     }
 
-    const artist = details.more_info?.singers || details.singers || details.more_info?.primary_artists || '';
+    const artist = extractArtist(details);
     const album = details.more_info?.album || details.album || '';
     let fallbackSongs = [];
 
