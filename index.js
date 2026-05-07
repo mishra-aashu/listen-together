@@ -58,6 +58,25 @@ const getImageUrl = (img) => {
 // Robustly extract artist names from raw JioSaavn data
 const extractArtist = (song) => {
   if (!song) return '';
+
+  // 1. Try artistMap (most accurate)
+  const artistMap = song.more_info?.artistMap || song.artistMap;
+  if (artistMap) {
+    const primary = artistMap.primary_artists || [];
+    const artists = artistMap.artists || [];
+    const featured = artistMap.featured_artists || [];
+    
+    // Combine names from primary and artists if they are arrays
+    const names = new Set();
+    [...primary, ...artists, ...featured].forEach(a => {
+      if (typeof a === 'string') names.add(a);
+      else if (a?.name) names.add(a.name);
+    });
+    
+    if (names.size > 0) return Array.from(names).join(', ');
+  }
+
+  // 2. Try direct fields in order of preference
   const artistData = 
     song.more_info?.singers || 
     song.more_info?.primary_artists || 
@@ -77,7 +96,12 @@ const extractArtist = (song) => {
     artistName = artistData;
   }
   
-  // Fallback to album artists if still empty
+  // 3. Fallback to subtitle (often contains "Artist - Album")
+  if (!artistName && song.subtitle) {
+    artistName = song.subtitle.split(' - ')[0].trim();
+  }
+
+  // 4. Fallback to album artists if still empty
   if (!artistName && song.more_info?.album?.artists && Array.isArray(song.more_info.album.artists)) {
     artistName = song.more_info.album.artists.map(a => a.name || a).join(', ');
   }
@@ -102,6 +126,9 @@ const transformSong = (song) => {
     year: song.year || '',
     duration: song.more_info?.duration || song.duration || 0,
     singers: artistName,
+    artist: artistName,      // Compatibility for frontend
+    artists: artistName,     // Compatibility for frontend
+    subtitle: artistName,    // Compatibility for frontend
     image: imageUrl,
     media_urls: {
       '320_KBPS': directUrl ? directUrl.replace(/(_\d{2,3})\.(mp4|m4a|mp3)/, '_320.$2') : null,
